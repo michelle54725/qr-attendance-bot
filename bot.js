@@ -1,5 +1,8 @@
 // This is the main file for the mao-bot bot.
 
+// Imports
+var content = require('./content');
+
 // Import Botkit's core features
 const { Botkit } = require('botkit');
 const { BotkitCMSHelper } = require('botkit-plugin-cms');
@@ -15,14 +18,14 @@ require('dotenv').config();
 
 let storage = null;
 if (process.env.MONGO_URI) {
-    storage = mongoStorage = new MongoDbStorage({
+    storage = new MongoDbStorage({
         url : process.env.MONGO_URI,
     });
 }
 
 const adapter = new SlackAdapter({
+    oauthVersion: 'v2',
     // parameters used to secure webhook endpoint
-    verificationToken: process.env.VERIFICATION_TOKEN,
     clientSigningSecret: process.env.CLIENT_SIGNING_SECRET,  
 
     // auth token for a single-team app
@@ -31,9 +34,9 @@ const adapter = new SlackAdapter({
     // credentials used to set up oauth for multi-team apps
     clientId: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
-    scopes: ['bot', 'user'], 
+    scopes: ['app_mentions:read', 'chat:write'], 
     redirectUri: process.env.REDIRECT_URI,
- 
+
     // functions required for retrieving team-specific info
     // for use in multi-team apps
     getTokenForTeam: getTokenForTeam,
@@ -100,10 +103,10 @@ controller.webserver.get('/install/auth', async (req, res) => {
         console.log('FULL OAUTH DETAILS', results);
 
         // Store token by team in bot state.
-        tokenCache[results.team_id] = results.bot.bot_access_token;
+        tokenCache[results.team_id] = results.access_token;
 
         // Capture team to bot id
-        userCache[results.team_id] =  results.bot.bot_user_id;
+        userCache[results.team_id] =  results.bot_user_id;
 
         res.json('Success! Bot installed.');
 
@@ -151,7 +154,7 @@ async function getBotUserByTeam(teamId) {
 
 // MAO-BOT CONFIGS
 controller.hears('interactive', 'direct_message', async(bot, message) => {
-    
-    await bot.reply(message, interactive);
+
+    await bot.reply(message, content.interactive);
 
 });
